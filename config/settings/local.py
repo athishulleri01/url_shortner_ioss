@@ -21,6 +21,16 @@ SECRET_KEY =  getenv("DJNAGO_SECRET_KEY","django-insecure-xt=6b+6b2&#wycs(qhb@a_
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
 
+
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:8080",
+    "http://127.0.0.1:8080",
+    "http://localhost",
+    "http://127.0.0.1",
+    "http://*"
+]
+
 ADMIN_URL = getenv("ADMIN_URL")
 
 #Only for production purpose

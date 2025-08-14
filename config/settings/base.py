@@ -28,7 +28,6 @@ THIRD_PARTY_APPS = [
     "rest_framework",
     "django_filters",
     "drf_yasg",
-    # 'bootstrap5',
 ]
 
 LOCAL_APPS = [

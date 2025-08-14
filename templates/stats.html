@@ -1,0 +1,491 @@
+{% extends 'base.html' %}
+
+{% block title %}Link Statistics - QuickLink{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <!-- Header Card -->
+        <div class="card text-center fade-in mb-4">
+            <div class="card-body p-5">
+                <div class="icon-wrapper mb-4" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                    <i class="fas fa-chart-line fa-2x text-white"></i>
+                </div>
+                
+                <h1 class="display-5 fw-bold text-primary mb-3">
+                    Link Analytics
+                </h1>
+                <p class="lead text-muted mb-4">
+                    Detailed statistics and insights for your shortened URL
+                </p>
+                
+                <!-- Short Code Display -->
+                <div class="url-display mb-3">
+                    <span class="text-white fw-bold">{{ request.build_absolute_uri_scheme }}://{{ request.get_host }}/{{ url.short_code }}</span>
+                    <button class="copy-btn" onclick="copyToClipboard('{{ request.build_absolute_uri }}')">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="row mb-5">
+            <div class="col-md-3 mb-4">
+                <div class="stats-card fade-in">
+                    <div class="stats-number">{{ url.click_count }}</div>
+                    <div class="stats-label">
+                        <i class="fas fa-mouse-pointer me-1"></i>Total Clicks
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-4">
+                <div class="stats-card fade-in">
+                    <div class="stats-number">{{ url.created_at|timesince }}</div>
+                    <div class="stats-label">
+                        <i class="fas fa-calendar me-1"></i>Age
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-4">
+                <div class="stats-card fade-in">
+                    <div class="stats-number">{{ url.short_code|length }}</div>
+                    <div class="stats-label">
+                        <i class="fas fa-code me-1"></i>Code Length
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-4">
+                <div class="stats-card fade-in">
+                    {% if url.click_count > 0 %}
+                        <div class="stats-number">Active</div>
+                        <div class="stats-label" style="color: #4ade80;">
+                            <i class="fas fa-check-circle me-1"></i>Status
+                        </div>
+                    {% else %}
+                        <div class="stats-number">Unused</div>
+                        <div class="stats-label" style="color: #fbbf24;">
+                            <i class="fas fa-clock me-1"></i>Status
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- URL Details Card -->
+        <div class="card fade-in mb-4">
+            <div class="card-body p-5">
+                <h3 class="text-primary mb-4">
+                    <i class="fas fa-info-circle me-2"></i>URL Details
+                </h3>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <h6 class="text-muted mb-2">Original URL:</h6>
+                        <div class="url-display" style="text-align: left;">
+                            <a href="{{ url.original_url }}" target="_blank" class="text-white text-decoration-none">
+                                {{ url.original_url }}
+                            </a>
+                            <button class="copy-btn" onclick="copyToClipboard('{{ url.original_url }}')">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-4">
+                        <h6 class="text-muted mb-2">Short Code:</h6>
+                        <div class="url-display" style="text-align: left;">
+                            <span class="text-white fw-bold">{{ url.short_code }}</span>
+                            <button class="copy-btn" onclick="copyToClipboard('{{ url.short_code }}')">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-4">
+                        <h6 class="text-muted mb-2">Created:</h6>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-calendar-alt text-primary me-2"></i>
+                            <span class="text-white">{{ url.created_at|date:"F d, Y" }}</span>
+                        </div>
+                        <small class="text-muted">{{ url.created_at|date:"g:i A T" }}</small>
+                    </div>
+                    <div class="col-md-6 mb-4">
+                        <h6 class="text-muted mb-2">URL Length Reduction:</h6>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-compress-arrows-alt text-success me-2"></i>
+                            {% widthratio url.original_url|length url.original_url|length 100 as original_length %}
+                            {% widthratio url.short_code|length url.original_url|length 100 as short_length %}
+                            <span class="text-white">{{ original_length|floatformat:0 }}% reduction</span>
+                        </div>
+                        <small class="text-muted">From {{ url.original_url|length }} to {{ url.short_code|length }} characters</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Chart Card -->
+        <div class="card fade-in mb-4">
+            <div class="card-body p-5">
+                <h3 class="text-primary mb-4">
+                    <i class="fas fa-chart-bar me-2"></i>Performance Overview
+                </h3>
+                
+                <div class="row">
+                    <div class="col-md-8 mb-4">
+                        <canvas id="performanceChart" width="400" height="200"></canvas>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="h-100 d-flex flex-column justify-content-center">
+                            <div class="text-center">
+                                <div class="display-4 fw-bold text-primary">{{ url.click_count }}</div>
+                                <h5 class="text-muted">Total Clicks</h5>
+                                
+                                {% if url.click_count > 0 %}
+                                    <div class="mt-4">
+                                        <div class="bg-success rounded-pill px-3 py-2 d-inline-block">
+                                            <i class="fas fa-trending-up text-white me-2"></i>
+                                            <span class="text-white fw-bold">Active Link</span>
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <div class="mt-4">
+                                        <div class="bg-warning rounded-pill px-3 py-2 d-inline-block">
+                                            <i class="fas fa-clock text-white me-2"></i>
+                                            <span class="text-white fw-bold">Awaiting First Click</span>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions Card -->
+        <div class="card fade-in mb-4">
+            <div class="card-body p-4">
+                <h5 class="text-primary mb-3">
+                    <i class="fas fa-tools me-2"></i>Actions
+                </h5>
+                <div class="row">
+                    <div class="col-md-3 mb-2">
+                        <button class="btn btn-success w-100" onclick="copyToClipboard('{{ request.build_absolute_uri_scheme }}://{{ request.get_host }}/{{ url.short_code }}')">
+                            <i class="fas fa-copy me-2"></i>Copy Short URL
+                        </button>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{{ url.original_url }}" target="_blank" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-external-link-alt me-2"></i>Visit Original
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <button class="btn btn-outline-info w-100" onclick="generateQRCode()">
+                            <i class="fas fa-qrcode me-2"></i>Generate QR
+                        </button>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'home' %}" class="btn btn-primary w-100">
+                            <i class="fas fa-plus me-2"></i>Create New
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- QR Code Modal -->
+        <div class="modal fade" id="qrModal" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content" style="background: var(--card-bg); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.2);">
+                    <div class="modal-header border-0">
+                        <h5 class="modal-title text-primary">
+                            <i class="fas fa-qrcode me-2"></i>QR Code
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body text-center">
+                        <div id="qrcode-container" class="mb-3">
+                            <div id="qrcode" class="d-inline-block p-3 bg-white rounded-3"></div>
+                        </div>
+                        <p class="text-muted">Scan this QR code to access your shortened URL</p>
+                        <button class="btn btn-primary" onclick="downloadQRCode()">
+                            <i class="fas fa-download me-2"></i>Download QR Code
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Chart.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+<!-- QR Code Library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+
+<script>
+    // Performance Chart
+    document.addEventListener('DOMContentLoaded', function() {
+        const ctx = document.getElementById('performanceChart').getContext('2d');
+        
+        // Generate sample data based on creation date and clicks
+        const createdDate = new Date('{{ url.created_at|date:"Y-m-d" }}');
+        const today = new Date();
+        const daysDiff = Math.ceil((today - createdDate) / (1000 * 60 * 60 * 24));
+        
+        const labels = [];
+        const data = [];
+        
+        // Generate last 7 days or since creation, whichever is less
+        const daysToShow = Math.min(7, daysDiff + 1);
+        
+        for (let i = daysToShow - 1; i >= 0; i--) {
+            const date = new Date();
+            date.setDate(date.getDate() - i);
+            labels.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+            
+            // Simulate click distribution (in real app, this would come from database)
+            if (i === 0) {
+                data.push({{ url.click_count }});
+            } else {
+                data.push(Math.max(0, {{ url.click_count }} - Math.floor(Math.random() * {{ url.click_count }})));
+            }
+        }
+        
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Clicks',
+                    data: data,
+                    borderColor: '#667eea',
+                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#667eea',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointRadius: 6,
+                    pointHoverRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1,
+                            color: '#9CA3AF'
+                        },
+                        grid: {
+                            color: 'rgba(156, 163, 175, 0.1)'
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            color: '#9CA3AF'
+                        },
+                        grid: {
+                            color: 'rgba(156, 163, 175, 0.1)'
+                        }
+                    }
+                },
+                elements: {
+                    point: {
+                        hoverBackgroundColor: '#667eea'
+                    }
+                }
+            }
+        });
+    });
+
+    // QR Code Generation
+    function generateQRCode() {
+        const modal = new bootstrap.Modal(document.getElementById('qrModal'));
+        
+        // Clear previous QR code
+        document.getElementById('qrcode').innerHTML = '';
+        
+        // Generate new QR code
+        const qr = new QRious({
+            element: document.getElementById('qrcode'),
+            value: '{{ request.build_absolute_uri_scheme }}://{{ request.get_host }}/{{ url.short_code }}',
+            size: 200,
+            background: 'white',
+            foreground: '#667eea',
+            level: 'M'
+        });
+        
+        modal.show();
+    }
+
+    // Download QR Code
+    function downloadQRCode() {
+        const canvas = document.querySelector('#qrcode canvas');
+        if (canvas) {
+            const link = document.createElement('a');
+            link.download = 'qrcode-{{ url.short_code }}.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+    }
+
+    // Copy to clipboard with enhanced feedback
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(function() {
+            // Create enhanced toast notification
+            const toast = document.createElement('div');
+            toast.className = 'position-fixed top-50 start-50 translate-middle';
+            toast.style.zIndex = '9999';
+            toast.innerHTML = `
+                <div class="alert alert-success shadow-lg fade-in" style="background: var(--success-gradient); border: none; min-width: 250px;">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-check-circle me-3 fa-lg"></i>
+                        <div>
+                            <strong>Copied!</strong>
+                            <div class="small">Text copied to clipboard</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(toast);
+            
+            // Animate in
+            setTimeout(() => {
+                toast.style.transform = 'translate(-50%, -50%) scale(1.05)';
+                setTimeout(() => {
+                    toast.style.transform = 'translate(-50%, -50%) scale(1)';
+                }, 100);
+            }, 10);
+            
+            // Animate out
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translate(-50%, -50%) scale(0.9)';
+                setTimeout(() => {
+                    toast.remove();
+                }, 300);
+            }, 2500);
+        }).catch(function(err) {
+            // Error toast
+            const errorToast = document.createElement('div');
+            errorToast.className = 'position-fixed top-50 start-50 translate-middle';
+            errorToast.style.zIndex = '9999';
+            errorToast.innerHTML = `
+                <div class="alert alert-danger shadow-lg fade-in" style="border: none; min-width: 250px;">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-exclamation-circle me-3 fa-lg"></i>
+                        <div>
+                            <strong>Copy Failed</strong>
+                            <div class="small">Please try again</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(errorToast);
+            
+            setTimeout(() => {
+                errorToast.remove();
+            }, 3000);
+        });
+    }
+
+    // Auto-refresh stats every 30 seconds
+    let autoRefresh = true;
+    
+    function toggleAutoRefresh() {
+        autoRefresh = !autoRefresh;
+        const button = document.getElementById('refreshToggle');
+        if (button) {
+            button.innerHTML = autoRefresh ? 
+                '<i class="fas fa-pause me-2"></i>Pause Refresh' : 
+                '<i class="fas fa-play me-2"></i>Resume Refresh';
+        }
+    }
+
+    function refreshStats() {
+        if (autoRefresh) {
+            location.reload();
+        }
+    }
+
+    // Set up auto-refresh (commented out by default)
+    // setInterval(refreshStats, 30000);
+
+    // Performance indicators
+    function calculatePerformanceScore() {
+        const clicks = {{ url.click_count }};
+        const age = {{ url.created_at|timesince|length }};  // Simplified age calculation
+        
+        let score = 'Poor';
+        let color = '#ef4444';
+        
+        if (clicks > 100) {
+            score = 'Excellent';
+            color = '#22c55e';
+        } else if (clicks > 50) {
+            score = 'Good';
+            color = '#3b82f6';
+        } else if (clicks > 10) {
+            score = 'Fair';
+            color = '#f59e0b';
+        }
+        
+        return { score, color };
+    }
+
+    // Add performance indicator on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        const performance = calculatePerformanceScore();
+        
+        // You can add a performance indicator element here if needed
+        console.log(`Link Performance: ${performance.score}`);
+    });
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        // Ctrl+C or Cmd+C to copy short URL
+        if ((e.ctrlKey || e.metaKey) && e.key === 'c' && !e.target.matches('input, textarea')) {
+            e.preventDefault();
+            copyToClipboard('{{ request.build_absolute_uri_scheme }}://{{ request.get_host }}/{{ url.short_code }}');
+        }
+        
+        // Q key to generate QR code
+        if (e.key === 'q' && !e.target.matches('input, textarea')) {
+            e.preventDefault();
+            generateQRCode();
+        }
+    });
+
+    // Add tooltip for keyboard shortcuts
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add subtle hint about keyboard shortcuts
+        const hint = document.createElement('div');
+        hint.className = 'position-fixed bottom-0 end-0 p-3';
+        hint.style.zIndex = '1000';
+        hint.innerHTML = `
+            <small class="text-muted bg-dark bg-opacity-75 px-3 py-2 rounded">
+                <i class="fas fa-keyboard me-1"></i>
+                Shortcuts: Ctrl+C (copy), Q (QR code)
+            </small>
+        `;
+        document.body.appendChild(hint);
+        
+        // Hide hint after 5 seconds
+        setTimeout(() => {
+            hint.style.opacity = '0';
+            setTimeout(() => hint.remove(), 500);
+        }, 5000);
+    });
+</script>
+{% endblock %}

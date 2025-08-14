@@ -9,7 +9,7 @@ urlpatterns = [
     # --------------------------------------------------------------------------------------------------------------
     # -----------------------------------Admin Pannel----------------------------------------------------------------------
     path(settings.ADMIN_URL, admin.site.urls),
-    path("api/v1/", include("core_apps.urlshortener.urls")),
+    path("", include("core_apps.urlshortener.urls")),
     
 ]
 

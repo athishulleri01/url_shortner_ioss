@@ -1,0 +1,240 @@
+{% extends 'base.html' %}
+
+{% block title %}URL Shortened Successfully - QuickLink{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <!-- Success Card -->
+        <div class="card text-center fade-in">
+            <div class="card-body p-5">
+                <div class="icon-wrapper mb-4" style="background: var(--success-gradient);">
+                    <i class="fas fa-check fa-2x text-white"></i>
+                </div>
+                
+                <h1 class="display-5 fw-bold text-success mb-3">
+                    URL Shortened Successfully!
+                </h1>
+                <p class="lead text-muted mb-4">
+                    Your URL has been shortened and is ready to share. Copy the link below and use it anywhere!
+                </p>
+
+                <!-- Original URL Display -->
+                <div class="mb-4">
+                    <h5 class="text-primary">
+                        <i class="fas fa-link me-2"></i>Original URL:
+                    </h5>
+                    <div class="url-display">
+                        <span class="text-white">{{ original_url }}</span>
+                        <button class="copy-btn" onclick="copyToClipboard('{{ original_url }}')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Shortened URL Display -->
+                <div class="mb-4">
+                    <h5 class="text-success">
+                        <i class="fas fa-magic me-2"></i>Shortened URL:
+                    </h5>
+                    <div class="url-display" style="background: linear-gradient(135deg, rgba(79, 172, 254, 0.2) 0%, rgba(0, 242, 254, 0.2) 100%); border-color: #4facfe;">
+                        <span class="text-white fw-bold">{{ short_url }}</span>
+                        <button class="copy-btn" onclick="copyToClipboard('{{ short_url }}')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="row mb-4">
+                    <div class="col-md-4 mb-2">
+                        <button class="btn btn-success w-100" onclick="copyToClipboard('{{ short_url }}')">
+                            <i class="fas fa-copy me-2"></i>Copy Link
+                        </button>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <a href="{% url 'stats' short_code %}" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-chart-bar me-2"></i>View Stats
+                        </a>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <a href="{% url 'home' %}" class="btn btn-primary w-100">
+                            <i class="fas fa-plus me-2"></i>Shorten Another
+                        </a>
+                    </div>
+                </div>
+
+                <!-- QR Code Section -->
+                <div class="card mt-4" style="background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2);">
+                    <div class="card-body">
+                        <h5 class="text-white mb-3">
+                            <i class="fas fa-qrcode me-2"></i>QR Code
+                        </h5>
+                        <div class="mb-3">
+                            <div id="qrcode-container" class="d-inline-block p-3 bg-white rounded-3">
+                                <div id="qrcode"></div>
+                            </div>
+                        </div>
+                        <button class="btn btn-outline-light btn-sm" onclick="downloadQRCode()">
+                            <i class="fas fa-download me-2"></i>Download QR Code
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Share Options -->
+                <div class="mt-4">
+                    <h5 class="text-white mb-3">
+                        <i class="fas fa-share-alt me-2"></i>Share Your Link
+                    </h5>
+                    <div class="d-flex justify-content-center flex-wrap gap-2">
+                        <button class="btn btn-outline-light btn-sm" onclick="shareOnTwitter()">
+                            <i class="fab fa-twitter me-2"></i>Twitter
+                        </button>
+                        <button class="btn btn-outline-light btn-sm" onclick="shareOnFacebook()">
+                            <i class="fab fa-facebook me-2"></i>Facebook
+                        </button>
+                        <button class="btn btn-outline-light btn-sm" onclick="shareOnLinkedIn()">
+                            <i class="fab fa-linkedin me-2"></i>LinkedIn
+                        </button>
+                        <button class="btn btn-outline-light btn-sm" onclick="shareOnWhatsApp()">
+                            <i class="fab fa-whatsapp me-2"></i>WhatsApp
+                        </button>
+                        <button class="btn btn-outline-light btn-sm" onclick="shareByEmail()">
+                            <i class="fas fa-envelope me-2"></i>Email
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tips Card -->
+        <div class="card mt-5 fade-in">
+            <div class="card-body p-4">
+                <h5 class="text-primary mb-3">
+                    <i class="fas fa-lightbulb me-2"></i>Pro Tips
+                </h5>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="d-flex">
+                            <div class="me-3">
+                                <i class="fas fa-bookmark text-primary"></i>
+                            </div>
+                            <div>
+                                <strong>Bookmark Your Links</strong>
+                                <p class="text-muted mb-0 small">Save the stats page URL to track your link performance over time.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="d-flex">
+                            <div class="me-3">
+                                <i class="fas fa-mobile-alt text-primary"></i>
+                            </div>
+                            <div>
+                                <strong>QR Codes Work Great</strong>
+                                <p class="text-muted mb-0 small">Use the QR code for easy sharing in print materials or presentations.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- QR Code Library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+
+<script>
+    // Generate QR Code
+    document.addEventListener('DOMContentLoaded', function() {
+        const qr = new QRious({
+            element: document.getElementById('qrcode'),
+            value: '{{ short_url }}',
+            size: 150,
+            background: 'white',
+            foreground: '#667eea'
+        });
+    });
+
+    // Download QR Code
+    function downloadQRCode() {
+        const canvas = document.querySelector('#qrcode');
+        const link = document.createElement('a');
+        link.download = 'qrcode-{{ short_code }}.png';
+        link.href = canvas.toDataURL();
+        link.click();
+    }
+
+    // Social Sharing Functions
+    function shareOnTwitter() {
+        const text = encodeURIComponent('Check out this link: {{ short_url }}');
+        window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank');
+    }
+
+    function shareOnFacebook() {
+        const url = encodeURIComponent('{{ short_url }}');
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank');
+    }
+
+    function shareOnLinkedIn() {
+        const url = encodeURIComponent('{{ short_url }}');
+        window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}`, '_blank');
+    }
+
+    function shareOnWhatsApp() {
+        const text = encodeURIComponent('Check out this link: {{ short_url }}');
+        window.open(`https://wa.me/?text=${text}`, '_blank');
+    }
+
+    function shareByEmail() {
+        const subject = encodeURIComponent('Shared Link');
+        const body = encodeURIComponent('Here\'s a link I wanted to share with you: {{ short_url }}');
+        window.open(`mailto:?subject=${subject}&body=${body}`);
+    }
+
+    // Enhanced copy functionality with animation
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(function() {
+            // Create custom toast notification
+            const toast = document.createElement('div');
+            toast.className = 'position-fixed top-50 start-50 translate-middle';
+            toast.style.zIndex = '9999';
+            toast.innerHTML = `
+                <div class="alert alert-success shadow-lg fade-in" style="background: var(--success-gradient); border: none;">
+                    <i class="fas fa-check-circle me-2"></i>
+                    <strong>Copied to clipboard!</strong>
+                </div>
+            `;
+            document.body.appendChild(toast);
+            
+            // Add entrance animation
+            setTimeout(() => {
+                toast.style.transform = 'translate(-50%, -50%) scale(1.1)';
+                setTimeout(() => {
+                    toast.style.transform = 'translate(-50%, -50%) scale(1)';
+                }, 100);
+            }, 10);
+            
+            // Remove after 2 seconds
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translate(-50%, -50%) scale(0.8)';
+                setTimeout(() => {
+                    toast.remove();
+                }, 300);
+            }, 2000);
+        }).catch(function(err) {
+            alert('Failed to copy: ' + err);
+        });
+    }
+
+    // Auto-copy short URL on page load (optional)
+    document.addEventListener('DOMContentLoaded', function() {
+        // Uncomment the line below if you want to auto-copy the shortened URL
+        // copyToClipboard('{{ short_url }}');
+    });
+</script>
+{% endblock %}
