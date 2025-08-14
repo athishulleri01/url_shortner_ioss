@@ -28,11 +28,11 @@ THIRD_PARTY_APPS = [
     "rest_framework",
     "django_filters",
     "drf_yasg",
-    'bootstrap5',
+    # 'bootstrap5',
 ]
 
 LOCAL_APPS = [
-
+    "core_apps.urlshortener",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -71,6 +71,18 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+
+
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.db.backends.postgresql",
+#         "NAME": getenv("POSTGRES_DB"),
+#         "USER": getenv("POSTGRES_USER"),
+#         "PASSWORD": getenv("POSTGRES_PASSWORD"),
+#         "HOST": getenv("POSTGRES_HOST"),
+#         "PORT": getenv("POSTGRES_PORT"),
+#     }
+# }
 
 DATABASES = {
     'default': {
